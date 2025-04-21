@@ -1,5 +1,5 @@
 flask
 gunicorn
-rdkit=2024.3.5
+rdkit==2024.3.5
 werkzeug
 python-dotenv
