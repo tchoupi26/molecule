@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Cartes Anki - Molécules</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .input-file {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .input-file:hover {
+            background-color: #e9ecef;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 600;
+            display: block;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .options {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-container {
+            display: inline-block;
+            position: relative;
+            margin-left: 10px;
+        }
+        
+        .toggle-checkbox {
+            height: 0;
+            width: 0;
+            visibility: hidden;
+            position: absolute;
+        }
+        
+        .toggle-label {
+            cursor: pointer;
+            text-indent: -9999px;
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            display: block;
+            border-radius: 25px;
+            position: relative;
+        }
+        
+        .toggle-label:after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            background: #fff;
+            border-radius: 21px;
+            transition: 0.3s;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background: #3498db;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label:after {
+            left: calc(100% - 2px);
+            transform: translateX(-100%);
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px auto;
+        }
+        
+        .loader-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f1f9fe;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+        
+        .info {
+            color: #2980b9;
+            font-weight: bold;
+        }
+        
+        .examples {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Générateur de Cartes Anki - Molécules</h1>
+        
+        <div class="notes">
+            <p class="info">Comment utiliser cette application :</p>
+            <ol>
+                <li>Listez les noms des molécules que vous souhaitez extraire (un nom par ligne)</li>
+                <li>Choisissez si vous voulez des représentations en couleur ou en noir et blanc</li>
+                <li>Cliquez sur "Générer les cartes Anki"</li>
+                <li>Importez le fichier ZIP téléchargé dans Anki en utilisant l'option "Fichier > Importer"</li>
+            </ol>
+        </div>
+        
+        <form id="moleculesForm" action="/process" method="POST">
+            <div class="form-group">
+                <label for="molecules_list">Liste des molécules à rechercher (un nom par ligne) :</label>
+                <textarea id="molecules_list" name="molecules_list" placeholder="Exemple :
+tetracycline
+doxycycline
+minocycline" required></textarea>
+            </div>
+            
+            <div class="form-group options">
+                <label>Options de représentation :</label>
+                <div class="toggle-option">
+                    <span>Utiliser des couleurs : </span>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="use_color" name="use_color" class="toggle-checkbox" checked>
+                        <label for="use_color" class="toggle-label">Activer/Désactiver les couleurs</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" id="submitButton">Générer les cartes Anki</button>
+            
+            <div class="loader" id="loader">
+                <div class="loader-spinner"></div>
+                <p>Traitement en cours... Cela peut prendre quelques instants.</p>
+            </div>
+        </form>
+        
+        <div class="notes" style="margin-top: 30px;">
+            <p class="info">Format des noms de molécules :</p>
+            <p>Entrez chaque nom de molécule sur une ligne séparée. L'application recherchera des correspondances exactes (insensible à la casse) dans le fichier SDF.</p>
+            <p>Exemple :</p>
+            <div class="examples">tetracycline<br>doxycycline<br>minocycline</div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('moleculesForm').addEventListener('submit', function() {
+            document.getElementById('submitButton').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            
+            // Arrêter l'animation après un délai raisonnable (5 secondes après le téléchargement)
+            setTimeout(function() {
+                // Le navigateur aura déjà commencé à télécharger le fichier
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('submitButton').style.display = 'block';
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
